@@ -9,6 +9,7 @@ import jwt from "jsonwebtoken";
 import emailService from "#services/email.service.js";
 import queueService from "#services/queue.service.js";
 import validateChangePassword from "#utils/validationChangePassword.js";
+import tasks from "#tasks/index.js";
 
 const register = async (req, res, next) => {
     const { email, password } = req.body;
@@ -40,7 +41,10 @@ const register = async (req, res, next) => {
         );
 
         // await emailService.sendVerifyEmail(email, emailToken);
-        queueService.push("sendVerifyEmail", { token: emailToken });
+        queueService.push("sendVerifyEmail", {
+            token: emailToken,
+            secretType: "email",
+        });
 
         res.success(
             {
@@ -72,6 +76,9 @@ const login = async (req, res, next) => {
     }
     try {
         const user = await userModel.findUserByEmail(email);
+        if (!user) {
+            throw new AuthError("Unauthorized");
+        }
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
             throw new AuthError("Email hoặc password không đúng");
@@ -82,6 +89,7 @@ const login = async (req, res, next) => {
             token.refresh_token,
             token.refresh_token_ttl,
         );
+        tasks.sendVerificationEmail(user);
         return res.success(user, 200, token);
     } catch (err) {
         return next(err);
@@ -187,6 +195,15 @@ const changePassword = async (req, res, next) => {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await userModel.updatePassword(user.id, hashedPassword);
         await revokedTokenModel.revokeAllByUser(user.id);
+        const passwordToken = jwtService(
+            user.id,
+            jwtconfig.changePasswordSecret,
+            jwtconfig.changePasswordSecrectTTL,
+        );
+        queueService.push("sendChangePasswordEmail", {
+            token: passwordToken,
+            secretType: "password",
+        });
         res.success("successfuly");
     } catch (err) {
         next(err);
