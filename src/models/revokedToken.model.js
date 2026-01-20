@@ -16,4 +16,12 @@ const existsByJti = async (jti) => {
     return rows.length > 0;
 };
 
-export default { create, existsByJti };
+const revokeAllByUser = async (id) => {
+    const [rows] = await pool.query(
+        `DELETE FROM revoked_tokens WHERE user_id = ?`,
+        [id],
+    );
+    return rows.affectedRows;
+};
+
+export default { create, existsByJti, revokeAllByUser };

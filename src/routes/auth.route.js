@@ -15,5 +15,10 @@ authRouter.post(
     authMeRequired,
     authController.resendVerifyEmail,
 );
+authRouter.post(
+    "/change-password",
+    authMeRequired,
+    authController.changePassword,
+);
 
 export default authRouter;

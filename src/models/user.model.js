@@ -26,7 +26,7 @@ const registerUser = async (email, password) => {
 
 const findUserById = async (id) => {
     const [rows] = await pool.query(
-        `SELECT id, email, verified_at FROM users WHERE id = ?`,
+        `SELECT id, email, verified_at, password FROM users WHERE id = ?`,
         [id],
     );
     return rows[0] || null;
@@ -68,6 +68,14 @@ const verifyEmail = async (id) => {
     return true;
 };
 
+const updatePassword = async (id, password) => {
+    const [rows] = await pool.query(
+        `UPDATE users SET password = ? where id = ?`,
+        [password, id],
+    );
+    return rows.affectedRows;
+};
+
 export default {
     findUserByEmail,
     registerUser,
@@ -76,4 +84,5 @@ export default {
     getRefreshToken,
     findUserByRefreshToken,
     verifyEmail,
+    updatePassword,
 };

@@ -8,6 +8,7 @@ import responseToken from "#utils/responseToken.js";
 import jwt from "jsonwebtoken";
 import emailService from "#services/email.service.js";
 import queueService from "#services/queue.service.js";
+import validateChangePassword from "#utils/validationChangePassword.js";
 
 const register = async (req, res, next) => {
     const { email, password } = req.body;
@@ -163,6 +164,35 @@ const resendVerifyEmail = async (req, res, next) => {
     }
 };
 
+const changePassword = async (req, res, next) => {
+    try {
+        const user = req.user;
+        if (!user) {
+            throw new AuthError("Unauthorized");
+        }
+
+        const password = String(req.body.password || "");
+        const newPassword = String(req.body.new_password || "");
+        const comfirmPassword = String(req.body.comfirm_password || "");
+
+        validateChangePassword({ password, newPassword, comfirmPassword });
+
+        const isMath = await bcrypt.compare(password, user.password);
+        if (!isMath) {
+            return res.error("Mật khẩu hiện tại không đúng", 401);
+        }
+        if (await bcrypt.compare(newPassword, user.password)) {
+            return res.error("Mật khẩu mới phải khác mật khẩu cũ", 400);
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await userModel.updatePassword(user.id, hashedPassword);
+        await revokedTokenModel.revokeAllByUser(user.id);
+        res.success("successfuly");
+    } catch (err) {
+        next(err);
+    }
+};
+
 export default {
     register,
     login,
@@ -170,4 +200,5 @@ export default {
     refreshTokenHandle,
     verifyEmail,
     resendVerifyEmail,
+    changePassword,
 };

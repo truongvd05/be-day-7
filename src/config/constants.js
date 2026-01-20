@@ -4,6 +4,7 @@ export const ERROR_MESSAGE = {
     INVALID_JSON: "Invalid JSON format",
     DATABASE_ERROR: "database operation failed",
     DUPLICATE_EMAIL: "Email already exists",
+    VALIDATE: "Validation error",
 };
 
 export const HTTP_STATUS = {
