@@ -18,7 +18,7 @@ let allowMethods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"];
 let corsOptions = {
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
-        if (ALLOWED_ORIGIN.includes(origin)) {
+        if (origin === ALLOWED_ORIGIN) {
             return callback(null, true);
         } else {
             callback(new Error("Not allow by cors"));
